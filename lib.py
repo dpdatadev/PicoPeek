@@ -1,12 +1,11 @@
 import gc
-
-gc.collect()
-
 import network
 import time
 import sys
 
 from machine import Pin
+
+DEBUG = True
 
 # Implement WiFiManager class to handle Wi-Fi connections and scanning
 # TODO :: Add Git Repo
@@ -2397,12 +2396,15 @@ def with_form_data(f):
 
 ##################################################################
 # End of microdot/multipart.py
-
-
 ##################################################################
 # Main application code
 # Testing the WiFiManager and Microdot integration
 ##################################################################
+
+if DEBUG is True:
+    print("---- DEBUG MODE ENABLED ----\n")
+    gc.collect() #OSError: ENOMEM workaround
+
 wifi_manager = WiFiManager(SSID, PASSWORD, type="STA")
 print(
     f"Availeble WiFi Networks: {len(wifi_manager.AvailableNetworks)} :: {wifi_manager.AvailableNetworks}\n"
@@ -2555,4 +2557,4 @@ async def shutdown(request):
     return "The server is shutting down..."
 
 
-app.run(debug=True)
+app.run(debug=DEBUG)
