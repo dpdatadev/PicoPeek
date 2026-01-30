@@ -5,6 +5,15 @@ import sys
 
 from machine import Pin
 
+# Machine functions (Temperature DHT 11 and DC Motor Drivers, GPIO, etc.,)
+############################################################################
+# TODO
+
+
+############################################################################
+# Networking Functions
+############################################################################
+
 DEBUG = True
 
 # Implement WiFiManager class to handle Wi-Fi connections and scanning
