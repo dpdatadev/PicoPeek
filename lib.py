@@ -1,3 +1,8 @@
+# dpdatadev@gmail.com
+# Library to use on Pico RP2040 and ESP32 MicroController/Boards.
+# Contains general purpose functionality that I may need for network connected boards (ICMP, SMTP, UDP, HTTP, etc.,)
+# And a few GPIO functions
+
 import gc
 import network
 import time
@@ -6,9 +11,15 @@ import os
 
 from machine import Pin
 
+CTRL_SVR: str = "192.168.1.128"
+PLATFORMS: list[str] = ["RP2040"]  # ESP32 in future
 
 # Board functions (Temperature DHT 11 and DC Motor Drivers, GPIO, etc.,)
 ############################################################################
+
+# Ring Buzzer
+
+
 def notify() -> None:
     buzzer = Pin(15, Pin.OUT)
     onboard_led = Pin("LED", Pin.OUT)
@@ -18,6 +29,8 @@ def notify() -> None:
     onboard_led.toggle()
     buzzer.value(0)
 
+
+# System info
 
 
 def print_rp2040_info():
@@ -47,9 +60,9 @@ def print_rp2040_info():
         print(f"* CPU Frequency: {freq / 1000000} MHz")
     except AttributeError:
         print("* CPU Frequency: Not available via machine.freq()")
-    
+
     # Get board information if available (e.g., Pico W adds network info)
-    if 'rp2' in sys.modules:
+    if "rp2" in sys.modules:
         print("* Board Series: Raspberry Pi RP2040 series\n")
 
 
@@ -64,6 +77,7 @@ from machine import ADC
 # Internal temperature sensor is connected to ADC channel 4
 temp_sensor = ADC(4)
 
+
 def read_internal_temperature():
     # Read the raw ADC value
     adc_value = temp_sensor.read_u16()
@@ -76,20 +90,50 @@ def read_internal_temperature():
 
     return temperature_celsius
 
-def celsius_to_fahrenheit(temp_celsius): 
-    temp_fahrenheit = temp_celsius * (9/5) + 32 
+
+def celsius_to_fahrenheit(temp_celsius):
+    temp_fahrenheit = temp_celsius * (9 / 5) + 32
     return temp_fahrenheit
+
 
 ############################################################################
 
+from machine import PWM
+
+# Moving motor with L293D driver (TODO)
+
+
+def motorMove(speed, direction, speedGP, cwGP, acwGP):
+    if speed > 100:
+        speed = 100
+    if speed < 0:
+        speed = 0
+    Speed = PWM(Pin(speedGP))
+    Speed.freq(50)
+    cw = Pin(cwGP, Pin.OUT)
+    acw = Pin(acwGP, Pin.OUT)
+    Speed.duty_u16(int(speed / 100 * 65536))
+    if direction < 0:
+        cw.value(0)
+        acw.value(1)
+    if direction == 0:
+        cw.value(0)
+        acw.value(0)
+    if direction > 0:
+        cw.value(1)
+        acw.value(0)
+
+
+############################################################################
 
 # Motion / Distance Functionality
 import machine, time
 from machine import Pin
 
-__version__ = '0.2.0'
-__author__ = 'Roberto Sánchez'
+__version__ = "0.2.0"
+__author__ = "Roberto Sánchez"
 __license__ = "Apache License 2.0. https://www.apache.org/licenses/LICENSE-2.0"
+
 
 class HCSR04:
     """
@@ -97,28 +141,29 @@ class HCSR04:
     The sensor range is between 2cm and 4m.
     The timeouts received listening to echo pin are converted to OSError('Out of range')
     """
+
     # echo_timeout_us is based in chip range limit (400cm)
-    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=500*2*30):
+    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=500 * 2 * 30):
         """
         trigger_pin: Output pin to send pulses
         echo_pin: Readonly pin to measure the distance. The pin should be protected with 1k resistor
-        echo_timeout_us: Timeout in microseconds to listen to echo pin. 
+        echo_timeout_us: Timeout in microseconds to listen to echo pin.
         By default is based in sensor limit range (4m)
         """
         self.echo_timeout_us = echo_timeout_us
         # Init trigger pin (out)
-        self.trigger = Pin(trigger_pin, mode=Pin.OUT) # Pull = None
+        self.trigger = Pin(trigger_pin, mode=Pin.OUT)  # Pull = None
         self.trigger.value(0)
 
         # Init echo pin (in)
-        self.echo = Pin(echo_pin, mode=Pin.IN) # Pull = None
+        self.echo = Pin(echo_pin, mode=Pin.IN)  # Pull = None
 
     def _send_pulse_and_wait(self):
         """
         Send the pulse to trigger and listen on echo pin.
         We use the method `machine.time_pulse_us()` to get the microseconds until the echo is received.
         """
-        self.trigger.value(0) # Stabilize the sensor
+        self.trigger.value(0)  # Stabilize the sensor
         time.sleep_us(5)
         self.trigger.value(1)
         # Send a 10us pulse.
@@ -128,8 +173,8 @@ class HCSR04:
             pulse_time = machine.time_pulse_us(self.echo, 1, self.echo_timeout_us)
             return pulse_time
         except OSError as ex:
-            if ex.args[0] == 110: # 110 = ETIMEDOUT
-                raise OSError('Out of range')
+            if ex.args[0] == 110:  # 110 = ETIMEDOUT
+                raise OSError("Out of range")
             raise ex
 
     def distance_mm(self):
@@ -138,11 +183,11 @@ class HCSR04:
         """
         pulse_time = self._send_pulse_and_wait()
 
-        # To calculate the distance we get the pulse_time and divide it by 2 
+        # To calculate the distance we get the pulse_time and divide it by 2
         # (the pulse walk the distance twice) and by 29.1 becasue
         # the sound speed on air (343.2 m/s), that It's equivalent to
         # 0.34320 mm/us that is 1mm each 2.91us
-        # pulse_time // 2 // 2.91 -> pulse_time // 5.82 -> pulse_time * 100 // 582 
+        # pulse_time // 2 // 2.91 -> pulse_time // 5.82 -> pulse_time * 100 // 582
         mm = pulse_time * 100 // 582
         return mm
 
@@ -153,7 +198,7 @@ class HCSR04:
         """
         pulse_time = self._send_pulse_and_wait()
 
-        # To calculate the distance we get the pulse_time and divide it by 2 
+        # To calculate the distance we get the pulse_time and divide it by 2
         # (the pulse walk the distance twice) and by 29.1 becasue
         # the sound speed on air (343.2 m/s), that It's equivalent to
         # 0.034320 cm/us that is 1cm each 29.1us
@@ -543,6 +588,51 @@ create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
 create_server() -- create a TCP socket and bind it to a specified address.
 """
+############################################################################
+############################################################################
+
+
+# TODO
+# UDP Messaging - Commander Framework
+# Still researching best method for my needs
+# May use HTTP and urequests.. 2/5/26
+# POD to hold our DataGram command data
+class CommandMessage:
+    def __init__(self, uuid, category, cmd_label, output):
+        self._uuid = uuid
+        self._category = category
+        self._cmd_label = cmd_label
+        self._output = output
+
+
+# TODO
+class CommandManager:
+    def __init__(self):
+        self._command_history = []
+
+    def drop_first_command(self):
+        self._command_history.pop(len(self._command_history) - 1)
+
+    def drop_latest_command(self):
+        self._command_history.pop(0)
+
+    def add_command(self, cmd: CommandMessage):
+        self._command_history.append(cmd)
+        if len(self._command_history) >= 30:
+            self.drop_first_command()  # if our command history goes over board, remove the very first command inserted
+
+    def get_history(self):
+        if len(self._command_history) > 0:
+            return self._command_history
+
+
+# TODO
+class CommandProcessor:
+    def __init__(self):
+        self._manager = CommandManager()
+
+    def process_command(self, message):
+        pass
 
 
 ############################################################################
@@ -596,6 +686,26 @@ class NetworkUtils:
                 pass
         return live_hosts
 
+    @staticmethod
+    def UDP_listen(server_address="0.0.0.0", port=9932):
+
+        import usocket
+
+        # Create a UDP socket
+        sock = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+
+        # Bind the socket to the port
+        sock.bind((server_address, port))
+        print(f"Server listening for messages on port {port}")
+
+        # Listen for incoming messages
+        while True:
+            data, address = sock.recvfrom(1024)
+            message = data.decode()
+            print("\nMESSAGE RECEIVED:\n")
+            print(message)
+            # print(address)
+
 
 ##################################################################
 # Main application code
@@ -612,7 +722,7 @@ if DEBUG is True:
     print("---- DEBUG MODE ENABLED ----\n")
     gc.collect()  # OSError: ENOMEM workaround
     print_rp2040_info()
-    
+
 
 wifi_manager = WiFiManager(SSID, PASSWORD, type="STA")
 print(
@@ -629,7 +739,15 @@ subnet_mask = f"Subnet Mask: {wifi_manager.SubnetMask}\n"
 dns = f"DNS: {wifi_manager.DNS}\n"
 board_temp = f"System temperature(F): {str(temperatureF)}"
 
-report = primary_network + ssid + ip_address + default_gateway + subnet_mask + dns + board_temp
+report = (
+    primary_network
+    + ssid
+    + ip_address
+    + default_gateway
+    + subnet_mask
+    + dns
+    + board_temp
+)
 print("---- Network Report ----\n")
 print(report)
 
@@ -664,3 +782,6 @@ NetworkUtils.send_email(
 print("Internal Temperature:", temperatureC, "°C")
 print("Internal Temperature:", temperatureF, "°F")
 LED.value(1)
+
+# Setup Command Client (UDP)
+NetworkUtils.UDP_listen()
