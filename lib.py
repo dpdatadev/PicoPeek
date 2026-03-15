@@ -217,8 +217,8 @@ DEBUG = True
 
 # Wi-Fi credentials
 # TODO - do something with these?
-SSID = "CasaNonna888"
-PASSWORD = "p@s$w0rD!!!"
+SSID = ""
+PASSWORD = ""
 
 
 class WiFiManager:
@@ -757,7 +757,7 @@ NetworkUtils.ping_host("192.168.1.1")
 # Email details
 sender_email = "droc37191@gmail.com"
 sender_name = "Raspberry Pi Pico"
-sender_app_password = "xoig jgac lbos ncfx"  # Google app pass: (pidevelopment)
+sender_app_password = ""  # Google app pass: (pidevelopment)
 recipient_email = "dpdatadev@gmail.com"
 
 email_subject = (
