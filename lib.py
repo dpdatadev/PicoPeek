@@ -591,52 +591,6 @@ create_server() -- create a TCP socket and bind it to a specified address.
 ############################################################################
 ############################################################################
 
-
-# TODO
-# UDP Messaging - Commander Framework
-# Still researching best method for my needs
-# May use HTTP and urequests.. 2/5/26
-# POD to hold our DataGram command data
-class CommandMessage:
-    def __init__(self, uuid, category, cmd_label, output):
-        self._uuid = uuid
-        self._category = category
-        self._cmd_label = cmd_label
-        self._output = output
-
-
-# TODO
-class CommandManager:
-    def __init__(self):
-        self._command_history = []
-
-    def drop_first_command(self):
-        self._command_history.pop(len(self._command_history) - 1)
-
-    def drop_latest_command(self):
-        self._command_history.pop(0)
-
-    def add_command(self, cmd: CommandMessage):
-        self._command_history.append(cmd)
-        if len(self._command_history) >= 30:
-            self.drop_first_command()  # if our command history goes over board, remove the very first command inserted
-
-    def get_history(self):
-        if len(self._command_history) > 0:
-            return self._command_history
-
-
-# TODO
-class CommandProcessor:
-    def __init__(self):
-        self._manager = CommandManager()
-
-    def process_command(self, message):
-        pass
-
-
-############################################################################
-############################################################################
 class NetworkUtils:
     """
     A class used for pinging hosts and scanning subnets.
@@ -667,24 +621,6 @@ class NetworkUtils:
     @staticmethod
     def ping_host(host, count=4, timeout=5000, interval=10, quiet=False, size=64):
         return ping(host, count, timeout, interval, quiet, size)
-
-    # TODO
-    @classmethod
-    def ping_subnet(cls, base_ip, start_suffix, end_suffix):
-        live_hosts = []
-        for i in range(start_suffix, end_suffix + 1):
-            host = f"{base_ip}.{i}"
-            try:
-                # Call the custom MicroPython ping function
-                # The exact call depends on the function's implementation (e.g., uping.ping(host))
-                if cls.ping_host(host, count=1, timeout=1000, quiet=True):
-                    live_hosts.append(host)
-                    print(f"{host} is UP")
-            except OSError:
-                # Handle cases where the host is down or an error occurs
-                # print(f"{host} is DOWN or unreachable")
-                pass
-        return live_hosts
 
     @staticmethod
     def UDP_listen(server_address="0.0.0.0", port=9932):
@@ -784,4 +720,4 @@ print("Internal Temperature:", temperatureF, "°F")
 LED.value(1)
 
 # Setup Command Client (UDP)
-NetworkUtils.UDP_listen()
+#NetworkUtils.UDP_listen()
